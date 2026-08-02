@@ -1,0 +1,103 @@
+<html>
+  <head>
+
+  </head>
+  <body>
+    <input id="myinput" type="text" size="80"
+        value="S N:QJ6.K652.J85.98:873.J97.AT764.4:K5.T83.KQ9.7652:AT942.AQ4.32.KJ3 CTCQCA"/>
+    <br/><input type="button" id="main" value="dds solve" />
+    <div id='status'></div>
+    <div id='progress'></div>
+    <div id='spinner'></div>
+    <textarea id=output cols="80" rows="10"></textarea>
+<script>
+var statusElement = document.getElementById("status"),
+  progressElement = document.getElementById("progress"),
+  spinnerElement = document.getElementById("spinner"),
+  Module = {
+    internal_counter: 0,
+    preRun: [],
+    postRun: [],
+    print: (function () {
+      var e = document.getElementById("output");
+      self.internal_counter++;
+      return (
+        e && (e.value = ""),
+        function (t) {
+          if (arguments.length) {
+            t = Array.prototype.slice.call(arguments).join(" ");
+            if ( t!== '') {
+                console.log(t, arguments),
+                e && ((e.value += t + "\n"), (e.scrollTop = e.scrollHeight));
+            }
+          }
+        }
+      );
+    })(),
+    setStatus: function (e) {
+      if (
+        (Module.setStatus.last ||
+          (Module.setStatus.last = { time: Date.now(), text: "" }),
+        e !== Module.setStatus.last.text)
+      ) {
+        var t = e.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/),
+          n = Date.now();
+        (t && n - Module.setStatus.last.time < 30) ||
+          ((Module.setStatus.last.time = n),
+          (Module.setStatus.last.text = e),
+          t
+            ? ((e = t[1]),
+              (progressElement.value = 100 * parseInt(t[2])),
+              (progressElement.max = 100 * parseInt(t[4])),
+              (progressElement.hidden = !1),
+              (spinnerElement.hidden = !1))
+            : ((progressElement.value = null),
+              (progressElement.max = null),
+              (progressElement.hidden = !0),
+              e || (spinnerElement.style.display = "none")),
+          (statusElement.innerHTML = e));
+      }
+    },
+    totalDependencies: 0,
+    monitorRunDependencies: function (e) {
+      (this.totalDependencies = Math.max(this.totalDependencies, e)),
+        Module.setStatus(
+          e
+            ? "Preparing... (" +
+                (this.totalDependencies - e) +
+                "/" +
+                this.totalDependencies +
+                ")"
+            : "All downloads complete."
+        );
+    },
+  };
+Module.setStatus("Downloading..."),
+  (window.onerror = function (e) {
+    Module.setStatus("Exception thrown, see JavaScript console"),
+      (spinnerElement.style.display = "none"),
+      (Module.setStatus = function (e) {
+        e && Module.printErr("[post-exception status] " + e);
+      });
+  });
+
+      console.log('loaded');
+      var button = document.getElementById("main");
+      button.addEventListener(
+          "click",
+          function () {
+              let v = document.getElementById("myinput").value;
+              console.log(v);
+              const f = v.split(" ");
+              const p = f.at(1).split(":");
+              const c = p.slice(1, p.length).join(' ');  
+              //Module["callMain"](['S', "N:QJ6.K652.J85.T98 873.J97.AT764.Q4 K5.T83.KQ9.A7652 AT942.AQ4.32.KJ3", 'xxxxxx']);
+              console.log([f.at(0), `${p[0]}:${c}`, f[2]])
+              Module["callMain"]([f.at(0), `${p[0]}:${c}`, f[2]]);
+            },
+          false
+        );    
+</script>
+<script async src=ddsSolveBoard.js></script>
+  </body>
+</html>

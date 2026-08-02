@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDS - Complete Pure JavaScript Double Dummy Solver</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --primary: #38bdf8;
+            --accent: #a855f7;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --code-bg: #090d16;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 32px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0 0 6px 0;
+            font-size: 1.8rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .badge {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input[type="text"], select {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.95rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button.btn-accent {
+            background-color: var(--accent);
+            color: #fff;
+        }
+
+        button.btn-secondary {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        button.btn-secondary:hover {
+            background-color: var(--border);
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        pre#output {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            color: var(--success);
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table.dd-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        table.dd-table th, table.dd-table td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        table.dd-table th {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pure JavaScript DDS <span class="badge">100% C++ Feature Parity</span></h1>
+            <p class="subtitle">Complete C++ DDS algorithms directly in JavaScript with Multi-Worker Parallel Execution (<span id="core-count">CPU Cores</span> available).</p>
+        </header>
+
+        <div class="card">
+            <div class="form-group">
+                <label>Randomized Deal Presets (Click to Generate New Random Card Distributions):</label>
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="loadRandomPreset(9)">Random 9-Trick Deal (36 Cards)</button>
+                    <button class="btn-secondary" onclick="loadRandomPreset(10)">Random 10-Trick Deal (40 Cards)</button>
+                    <button class="btn-secondary" onclick="loadRandomPreset(11)">Random 11-Trick Deal (44 Cards)</button>
+                    <button class="btn-secondary" onclick="loadRandomPreset(13)">Random Full 52-Card Deal</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="pbn">PBN Remaining Cards Deal:</label>
+                <input type="text" id="pbn" value="N:AKQ... J109... 876... 543...">
+            </div>
+
+            <div class="form-group">
+                <label for="playTrace">Play Trace (for Play Analyser):</label>
+                <input type="text" id="playTrace" value="CT C4 CA CJ H8 H4 HK H9">
+            </div>
+
+            <div style="display: flex; gap: 16px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="trump">Trump Suit:</label>
+                    <select id="trump">
+                        <option value="4" selected>NT (No Trumps)</option>
+                        <option value="0">♠ Spades</option>
+                        <option value="1">♥ Hearts</option>
+                        <option value="2">♦ Diamonds</option>
+                        <option value="3">♣ Clubs</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="first">First to Play / Leader:</label>
+                    <select id="first">
+                        <option value="0" selected>North</option>
+                        <option value="1">East</option>
+                        <option value="2">South</option>
+                        <option value="3">West</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-accent" onclick="runParallelWorkersSolve()">solveBoardPBN() [<span id="btn-cores">Multi-Worker</span>]</button>
+                <button onclick="runCalcDDTable()">calcDDTablePBN()</button>
+                <button onclick="runAnalysePlay()">analysePlayPBN()</button>
+                <button onclick="runCalcPar()">calcParPBN()</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Solver Results</h3>
+            <div id="table-output"></div>
+            <pre id="output">Ready to solve.</pre>
+        </div>
+    </div>
+
+    <!-- Include Pure JavaScript DDS Library -->
+    <script src="dds.js"></script>
+    <script>
+        const outputElem = document.getElementById('output');
+        const tableOutputElem = document.getElementById('table-output');
+        const coreCountElem = document.getElementById('core-count');
+        const btnCoresElem = document.getElementById('btn-cores');
+
+        const numCores = navigator.hardwareConcurrency || 4;
+        coreCountElem.textContent = `${numCores} CPU Cores`;
+        btnCoresElem.textContent = `${numCores} Parallel Workers`;
+
+        function loadRandomPreset(numTricks) {
+            const randomPbn = DDS.generateRandomDeal(numTricks);
+            document.getElementById('pbn').value = randomPbn;
+            runParallelWorkersSolve();
+        }
+
+        function logOutput(obj) {
+            outputElem.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+        }
+
+        /**
+         * Always Multi-Worker Parallel Solve.
+         * Spawns N Web Workers (matching navigator.hardwareConcurrency) to evaluate root move branches in parallel.
+         */
+        function runParallelWorkersSolve() {
+            tableOutputElem.innerHTML = '';
+            const pbn = document.getElementById('pbn').value;
+            const trump = parseInt(document.getElementById('trump').value);
+            const first = parseInt(document.getElementById('first').value);
+
+            const parsed = DDS.parsePBN(pbn);
+            const leader = first !== undefined ? first : parsed.firstSeat;
+
+            // Generate legal root lead moves for leader
+            let moves = [];
+            for (let suit = 0; suit < 4; suit++) {
+                let mask = parsed.cards[leader][suit];
+                for (let rank = 14; rank >= 2; rank--) {
+                    if (mask & (1 << rank)) {
+                        moves.push({ suit, rank });
+                    }
+                }
+            }
+
+            const workerCount = Math.min(numCores, moves.length || 1);
+            logOutput(`Spawning ${workerCount} Parallel Web Workers across ${numCores} CPU Cores...`);
+
+            const startTime = performance.now();
+            let completed = 0;
+            let totalNodes = 0;
+            const moveResults = [];
+
+            const workers = [];
+            for (let i = 0; i < workerCount; i++) {
+                const w = new Worker('dds_worker.js');
+                workers.push(w);
+            }
+
+            // Distribute root lead moves across parallel workers
+            moves.forEach((move, index) => {
+                const workerIdx = index % workerCount;
+                const w = workers[workerIdx];
+
+                w.onmessage = function(e) {
+                    completed++;
+                    const data = e.data;
+                    if (data.result) {
+                        totalNodes += data.result.nodes || 0;
+                        moveResults.push({
+                            suit: move.suit,
+                            rank: move.rank,
+                            score: data.result.tricksNS
+                        });
+                    }
+
+                    if (completed === moves.length) {
+                        const elapsed = (performance.now() - startTime).toFixed(2);
+                        workers.forEach(worker => worker.terminate());
+
+                        logOutput({
+                            feature: "Parallel Multi-Worker Solve",
+                            workerThreads: workerCount,
+                            cpuCores: numCores,
+                            executionTime: `${elapsed} ms`,
+                            result: {
+                                nodes: totalNodes,
+                                cards: moveResults.length,
+                                suit: moveResults.map(m => m.suit),
+                                rank: moveResults.map(m => m.rank),
+                                score: moveResults.map(m => m.score)
+                            }
+                        });
+                    }
+                };
+
+                w.postMessage({
+                    type: 'solve',
+                    pbn,
+                    trump,
+                    first,
+                    currentTrickSuit: [move.suit],
+                    currentTrickRank: [move.rank]
+                });
+            });
+        }
+
+        function runCalcDDTable() {
+            const pbn = document.getElementById('pbn').value;
+            const start = performance.now();
+            const res = DDS.calcDDTablePBN(pbn);
+            const elapsed = (performance.now() - start).toFixed(2);
+
+            logOutput({
+                feature: "calcDDTablePBN",
+                executionTime: `${elapsed} ms`,
+                result: res
+            });
+
+            // Render DD Matrix
+            const suits = ['♠', '♥', '♦', '♣', 'NT'];
+            let html = '<table class="dd-table"><thead><tr><th>Strain</th><th>N</th><th>E</th><th>S</th><th>W</th></tr></thead><tbody>';
+            for (let strain = 0; strain < 5; strain++) {
+                html += `<tr><th>${suits[strain]}</th>`;
+                for (let seat = 0; seat < 4; seat++) {
+                    html += `<td>${res.resTable[strain][seat]}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            tableOutputElem.innerHTML = html;
+        }
+
+        function runAnalysePlay() {
+            tableOutputElem.innerHTML = '';
+            const pbn = document.getElementById('pbn').value;
+            const trump = parseInt(document.getElementById('trump').value);
+            const first = parseInt(document.getElementById('first').value);
+            const playTrace = document.getElementById('playTrace').value;
+
+            const res = DDS.analysePlayPBN(pbn, trump, first, playTrace);
+            logOutput({
+                feature: "analysePlayPBN",
+                result: res
+            });
+        }
+
+        function runCalcPar() {
+            tableOutputElem.innerHTML = '';
+            const pbn = document.getElementById('pbn').value;
+            const res = DDS.calcParPBN(pbn, 0, 0);
+            logOutput({
+                feature: "calcParPBN",
+                result: res
+            });
+        }
+
+        window.onload = function() {
+            loadRandomPreset(9);
+        };
+    </script>
+</body>
+</html>
