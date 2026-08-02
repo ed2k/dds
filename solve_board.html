@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDS - Solve Board WASM</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --success-color: #4ade80;
+            --error-color: #f87171;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            color: var(--accent-color);
+            font-size: 1.5rem;
+        }
+
+        p {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        #output-container {
+            flex: 1;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-y: auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        pre#output {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .status.running { background-color: #0284c7; color: white; }
+        .status.success { background-color: #166534; color: #bbf7d0; }
+        .status.error { background-color: #991b1b; color: #fecaca; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>DDS Double Dummy Solver - solve_board.js</h1>
+        <p>Loading script: <code>bazel-bin/wasm/solve_board.js</code></p>
+    </header>
+    <div id="status" class="status running">Initializing WASM runtime...</div>
+    <div id="output-container">
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        const outputElem = document.getElementById('output');
+        const statusElem = document.getElementById('status');
+
+        function appendText(text, isError = false) {
+            outputElem.textContent += text + '\n';
+            outputElem.scrollTop = outputElem.scrollHeight;
+        }
+
+        var Module = {
+            print: function(text) {
+                console.log(text);
+                appendText(text);
+            },
+            printErr: function(text) {
+                console.error(text);
+                appendText('[ERR] ' + text, true);
+            },
+            onRuntimeInitialized: function() {
+                console.log("WASM runtime initialized.");
+                statusElem.textContent = "WASM Runtime Initialized & Solved";
+                statusElem.className = "status success";
+            },
+            onAbort: function(what) {
+                statusElem.textContent = "WASM Execution Aborted";
+                statusElem.className = "status error";
+                appendText("[ABORT] " + what, true);
+            }
+        };
+
+        window.onerror = function(event) {
+            statusElem.textContent = "Execution Error";
+            statusElem.className = "status error";
+            appendText("[ERROR] " + event, true);
+        };
+    </script>
+    <script src="bazel-bin/wasm/solve_board.js"></script>
+</body>
+</html>

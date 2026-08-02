@@ -1,7 +1,41 @@
-load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
-load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LOCAL_DEFINES")
+load("//:CPPVARIABLES.bzl", "DDS_CPPOPTS", "DDS_LINKOPTS", "DDS_LOCAL_DEFINES")
+load("//:wasm_compat.bzl", "WASM_LINKOPTS")
+
+WASM_API_LINKOPTS = WASM_LINKOPTS + [
+    "--bind",
+    "-sMODULARIZE=1",
+    "-sEXPORT_NAME=createDdsApiModule",
+    "-sENVIRONMENT=web,worker,node",
+]
+
+cc_binary(
+    name = "dds_wasm_api_cc",
+    srcs = ["dds_wasm_api.cpp"],
+    copts = DDS_CPPOPTS,
+    linkopts = DDS_LINKOPTS + select({
+        "//:build_wasm": WASM_API_LINKOPTS,
+        "//conditions:default": [],
+    }),
+    local_defines = DDS_LOCAL_DEFINES,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//library/src:dds",
+        "//library/src/api:api_definitions",
+    ],
+)
+
+wasm_cc_binary(
+    name = "dds_wasm_api",
+    cc_target = ":dds_wasm_api_cc",
+    threads = "emscripten",
+    outputs = [
+        "dds_wasm_api.js",
+        "dds_wasm_api.wasm",
+    ],
+)
 
 wasm_cc_binary(
     name = "solve_board_wasm",
@@ -68,6 +102,7 @@ filegroup(
     srcs = [
         ":analyse_play_bin_wasm",
         ":calc_dd_table_pbn_wasm",
+        ":dds_wasm_api",
         ":solve_board_wasm",
     ],
     visibility = ["//visibility:public"],
@@ -101,10 +136,23 @@ py_test(
     ],
 )
 
+py_test(
+    name = "dds_wasm_api_system_test",
+    size = "small",
+    timeout = "short",
+    main = "tests/test_dds_wasm_api.py",
+    srcs = ["tests/test_dds_wasm_api.py"],
+    data = [
+        ":dds_wasm_api",
+        "tests/dds_wasm_api_test.cjs",
+    ],
+)
+
 test_suite(
     name = "all",
     tests = [
         ":calc_dd_table_pbn_test",
+        ":dds_wasm_api_system_test",
         ":run_dtest_wasm_test",
         ":wasm_examples_system_test",
     ],
@@ -112,5 +160,9 @@ test_suite(
 
 test_suite(
     name = "wasm_system_tests",
-    tests = [":wasm_examples_system_test"],
+    tests = [
+        ":dds_wasm_api_system_test",
+        ":wasm_examples_system_test",
+    ],
 )
+
