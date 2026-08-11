@@ -64,8 +64,9 @@ test:asan --test_timeout=120,300,900,3600
 # Scoped to `build` (not `test`) so the suppression also applies to plain
 # `bazel build` of test targets and tooling that compiles GoogleTest, not just
 # `bazel test`. The `build` config is inherited by `test`, `run`, etc.
-# On Linux, use -Wno-conversion for portability when the system compiler is GCC.
-build:macos --cxxopt=-Wno-character-conversion
+# `-Wno-character-conversion` is unavailable in Apple's Intel Clang; use the
+# broader spelling, which is accepted by both Apple Clang and GCC.
+build:macos --cxxopt=-Wno-conversion
 build:linux --cxxopt=-Wno-conversion
 # macOS AddressSanitizer must use the Xcode compiler/runtime. LLVM-instrumented
 # binaries hang with LLVM's ASAN dylib and abort with Xcode's (version mismatch).

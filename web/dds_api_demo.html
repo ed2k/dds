@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script src="coi-serviceworker.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DDS WebAssembly JavaScript API Demo</title>
     <style>
@@ -243,7 +244,7 @@
     </div>
 
     <!-- Load compiled WASM JS bundle -->
-    <script src="../bazel-bin/wasm/dds_wasm_api.js"></script>
+    <script src="dds_wasm_api.js"></script>
     <script src="dds_api.js"></script>
     <script>
         let ddsApi = null;

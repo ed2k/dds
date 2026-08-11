@@ -11,6 +11,16 @@ DDS_CPPOPTS = select({
         "-Wno-character-conversion",
         "-Werror",
     ],
+    "//:build_macos_x86": [
+        "-O3",
+        "-flto=thin",
+        "-mtune=generic",
+        "-fPIC",
+        "-Wpedantic",
+        "-Wall",
+        "-Wno-conversion",
+        "-Werror",
+    ],
     "//:debug_build_macos": [
         "-g",
         "-mtune=generic",
@@ -18,6 +28,15 @@ DDS_CPPOPTS = select({
         "-Wpedantic",
         "-Wall",
         "-Wno-character-conversion",
+        "-Werror",
+    ],
+    "//:debug_build_macos_x86": [
+        "-g",
+        "-mtune=generic",
+        "-fPIC",
+        "-Wpedantic",
+        "-Wall",
+        "-Wno-conversion",
         "-Werror",
     ],
     "//:build_linux": [
